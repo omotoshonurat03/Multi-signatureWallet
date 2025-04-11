@@ -107,3 +107,39 @@
     )
   )
 )
+
+
+;; Get transaction details
+(define-private (get-transaction (tx-id uint))
+  (map-get? transactions { tx-id: tx-id })
+)
+
+;; Execute the transaction if enough signatures
+(define-public (execute-transaction (tx-id uint))
+  (let ((caller tx-sender)
+        (tx (get-transaction tx-id)))
+    
+    ;; Check if transaction exists
+    (asserts! (is-some tx) ERR_TX_DOESNT_EXIST)
+    
+    (let ((unwrapped-tx (unwrap-panic tx)))
+      ;; Check if expired
+      (asserts! (< block-height (get expiration unwrapped-tx)) ERR_TX_EXPIRED)
+      
+      ;; Check if already executed
+      (asserts! (not (get executed unwrapped-tx)) ERR_TX_ALREADY_EXECUTED)
+      
+      ;; Check if enough signatures
+      (asserts! (>= (len (get signatures unwrapped-tx)) (var-get threshold)) ERR_INSUFFICIENT_SIGNATURES)
+      
+      ;; Update the transaction status
+      (map-set transactions
+        { tx-id: tx-id }
+        (merge unwrapped-tx { executed: true })
+      )
+      
+      ;; Transfer the STX
+      (stx-transfer? (get amount unwrapped-tx) tx-sender (get to unwrapped-tx))
+    )
+  )
+)
