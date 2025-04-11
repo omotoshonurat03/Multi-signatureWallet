@@ -33,3 +33,19 @@
     signatures: (list 10 principal)
   }
 )
+
+;; Initialize the wallet with owners and signature threshold
+(define-public (initialize (new-owners (list 10 principal)) (sig-threshold uint))
+  (begin
+    (asserts! (<= sig-threshold (len new-owners)) ERR_INVALID_THRESHOLD)
+    (asserts! (> sig-threshold u0) ERR_INVALID_THRESHOLD)
+    (var-set owners new-owners)
+    (var-set threshold sig-threshold)
+    (ok true)
+  )
+)
+
+;; Check if the caller is an owner
+(define-private (is-owner (caller principal))
+  (default-to false (some (lambda (owner) (is-eq owner caller)) (var-get owners)))
+)
