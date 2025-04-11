@@ -143,3 +143,29 @@
     )
   )
 )
+
+;; Get number of signatures for a transaction
+(define-read-only (get-signature-count (tx-id uint))
+  (default-to u0 (map len (map get signatures (get-transaction tx-id))))
+)
+
+;; Check if a principal has signed a transaction
+(define-read-only (has-signed (tx-id uint) (who principal))
+  (default-to 
+    false 
+    (map 
+      (lambda (signatures) (default-to false (some (lambda (signer) (is-eq signer who)) signatures)))
+      (map get signatures (get-transaction tx-id))
+    )
+  )
+)
+
+;; Get the current owners
+(define-read-only (get-owners)
+  (var-get owners)
+)
+
+;; Get the threshold
+(define-read-only (get-threshold)
+  (var-get threshold)
+)
